@@ -1,5 +1,7 @@
 import { extend } from "../shared";
 
+let activeEffect;
+let shouldTrack = false;
 class ReactiveEffect {
   private _fn: any;
   deps = [];
@@ -9,8 +11,19 @@ class ReactiveEffect {
     this._fn = fn;
   }
   run() {
+    if (!this.active) {
+      return this._fn();
+    }
+
+    // 应该收集
+    shouldTrack = true;
     activeEffect = this;
-    return this._fn();
+    const r = this._fn();
+
+    // 重置
+    shouldTrack = false;
+
+    return r;
   }
   stop() {
     if (this.active) {
@@ -27,10 +40,14 @@ function cleanupEffect(effect) {
   effect.deps.forEach((dep: any) => {
     dep.delete(effect);
   });
+  // 把 effect.deps 清空
+  effect.deps.length = 0;
 }
 
 const targetMap = new Map();
 export function track(target, key) {
+  if (!isTracking()) return;
+
   // target -> key -> dep
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -44,10 +61,15 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
-  if (!activeEffect) return;
+  // 如果之前dep里面就保存了当前的effect，就不用再收集了
+  if (dep.has(activeEffect)) return;
 
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
 }
 
 export function trigger(target, key) {
@@ -63,7 +85,6 @@ export function trigger(target, key) {
   }
 }
 
-let activeEffect;
 export function effect(fn, options: any = {}) {
   const scheduler = options.scheduler;
   const _effect = new ReactiveEffect(fn, scheduler);
