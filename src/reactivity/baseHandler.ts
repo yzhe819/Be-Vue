@@ -1,12 +1,13 @@
-import { isObject } from "../shared";
+import { extend, isObject } from "../shared";
 import { track, trigger } from "./effect";
 import { reactive, ReactiveFlags, readonly } from "./reactive";
 
 const get = createGetter();
 const set = createSetter();
 const readonlyGet = createGetter(true);
+const shallowReadonlyGet = createGetter(true, true);
 
-function createGetter(isReadonly = false) {
+function createGetter(isReadonly = false, shallow = false) {
   return function get(target, key) {
     if (key === ReactiveFlags.IS_REACTIVE) {
       // 是reactive数据吗?
@@ -18,6 +19,10 @@ function createGetter(isReadonly = false) {
 
     // Reflect直接调用对象内的方法,获取属性值
     const res = Reflect.get(target, key);
+
+    if (shallow) {
+      return res;
+    }
 
     // 用于嵌套对象转换功能 例如: { foo: { bar: 1 } } 里面的 foo 对象
     if (isObject(res)) {
@@ -59,3 +64,8 @@ export const readonlyHandlers = {
     return true;
   },
 };
+
+// shallow只读对象的handler
+export const shallowReadonlyHandlers = extend({}, readonlyHandlers, {
+  get: shallowReadonlyGet,
+});
