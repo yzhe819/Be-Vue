@@ -30,6 +30,10 @@ export function isReadonly(value) {
   return !!value[ReactiveFlags.IS_READONLY];
 }
 
+export function isProxy(value) {
+  return isReactive(value) || isReadonly(value);
+}
+
 function createReactiveObject(target, baseHandler) {
   // Proxy对象由target明白对象、baseHandler代理行为的对象组成
   return new Proxy(target, baseHandler);
