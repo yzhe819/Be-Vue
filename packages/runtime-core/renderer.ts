@@ -29,7 +29,6 @@ function mountElement(vnode: any, container: any) {
 
   // children
   if (typeof children === "string") {
-    console.log("string children");
     el.textContent = children;
   } else if (Array.isArray(children)) {
     mountChildren(vnode, el);

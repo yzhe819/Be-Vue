@@ -4,12 +4,12 @@ export const App = {
   // 必须要写 render
   render() {
     // ui
-    return h("div", "hi, be-vue");
+    return h("div", {}, "hello world!");
   },
 
-  // setup() {
-  //   return {
-  //     msg: "be-vue",
-  //   };
-  // },
+  setup() {
+    return {
+      msg: "be-vue",
+    };
+  },
 };
