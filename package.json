@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "be-vue",
   "version": "1.0.0",
   "description": "🖖 Build your own vue3",
