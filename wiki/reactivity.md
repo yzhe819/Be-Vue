@@ -4,7 +4,7 @@
 
 ## Vue3响应式原理
 
-`Vue3`的响应式实现是通过`proxy`拦截数据的读取和更新（数据劫持）来实现数据的响应化。而`Vue2`的实现则是使用`Object.defineProperty`。性能上是`proxy`更优，并且`proxy`不仅仅可以监听对象某个属性值的变化，还能监听对象属性的变化。而`Vue2`是给已存在的属性添加`getter`和`setter`，无法监听属性的增加和删除。
+`Vue3`的响应式实现是通过`proxy`拦截数据的读取和更新（数据劫持）来实现数据的响应化。而`Vue2`的实现则是使用`Object.defineProperty`。性能上是`proxy`更优，并且`proxy`可以直接监听对象而非属性。而`Vue2`是给已存在的属性添加`getter`和`setter`，并通过遍历对象属性直接修改。
 
 这是一个最简单的数据响应化例子：
 
@@ -92,3 +92,37 @@ console.log(dummy); // 2
 ## 依赖收集 & 依赖触发
 
 To Be Continued...
+
+
+
+## Vue2数据双向绑定
+
+使用`Object.definedProperty`方法，俗称**属性拦截器**。兼容性好，支持 IE9，而 Proxy 的存在浏览器兼容性问题。
+
+
+
+下面是基础调用的例子：
+
+```javascript
+let user = {
+  name: "be-vue",
+};
+
+Object.defineProperty(user, "age", {
+  value: 18,
+  enumerable: true, // 设置为可枚举的
+  writable: true, // 设置为可写的， 需要设置为true才能让新增的属性被修改
+  configurable: true, // 设置为可配置的， 需要设置为true才能让新增的属性被删除
+});
+console.log(user); // { name: 'be-vue', age: 18 }
+
+user.name = "hello world"; // 更新原有属性
+console.log(user); // { name: 'hello world', age: 18 }
+
+user.age = 22; // 更新新增属性
+console.log(user); // { name: 'hello world', age: 22 }
+
+delete user.age; // 删除属性
+console.log(user); // { name: 'hello world' }
+```
+
