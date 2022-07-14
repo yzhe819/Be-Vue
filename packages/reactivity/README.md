@@ -50,6 +50,35 @@
 
 
 
+### track 依赖收集
+
+在`effect.ts`内的`track()`方法，这个函数会接受响应式原始对象`target`和一个`key`值。并且依赖于一个全局变量`targetMap`
+
+1. 调用时，首先判断是否正在追踪。（`shouldTrack && activeEffect !== undefined;`，`shouldTrack`会被被设置为`true`在`running`途中)
+2. 如果不是，就直接返回结束调用。否则，从全局变量`targetMap`使用`target`获取其依赖表`depsMap`，然后再从这个依赖表中找到关联这个`key`的相关依赖集`dep` 。并且函数在这里维护数据结构，如果没有就创建新的，并且将其绑定。
+3. 最后调用`trackEffects`并将找到的依赖传入。首先它会将`activeEffect` 收集到依赖集内，方便后续的调用。（如果之前`dep`里面就保存了当前的`effect`，就不用再收集了） 然后再反向添加依赖`dep`到对应的`ReactiveEffect`中的`deps`内。（这部分在清除依赖的时候很有用）
+
+
+
+**注**：什么时候触发依赖收集？并且`isTracking()`什么时候会返回true？
+
+- 当用户将`fn`传入到`effect`内，effect在初始化后会调用一次run函数。在调用`run`函数的时候，`shouldTrack = true; activeEffect = this;`， 这两个全局变量会被配置好。然后进入到正式的`fn`调用中。
+- 在`fn`调用的时候，会访问相关的`reactive`值，这时候会调用`reactive`内的`get`函数，在该函数内会进行依赖收集，调用`track()`。
+- 进入到`track()`内，这时的`isTracking()`会返回`true`，并且`activeEffect`就是我们所期望的。
+- 完成依赖收集后，`get`函数会返回所得到的值。并且继续执行`fn`方法
+- 等到执行完毕后，再次回到`ReactiveEffect`的`run`方法内，`shouldTrack`会被重置为`false`，再将返回值`return`出去。
+
+
+
+### trigger 触发依赖
+
+触发依赖会在值被设置的时候进行调用。
+
+1. `trigger(target, key)`会使用传入的`target`和`key`值在`depsMap`内查找依赖，最后得到相关的依赖`dep`。
+2. 然后将其传入到`triggerEffects(dep)`内，遍历`dep`的每一个`effect`对象，调用 `run` 或 `scheduler`。
+
+
+
 ## 相关代码实现
 
 ### createGetter
