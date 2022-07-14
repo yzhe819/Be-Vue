@@ -24,7 +24,7 @@
 
 
 
-## 代码实现
+## 功能实现
 
 ### reactive 的实现
 
@@ -50,7 +50,7 @@
 
 
 
-## 相关函数实现
+## 相关代码实现
 
 ### createGetter
 
@@ -61,3 +61,35 @@
 3. 最后对获取到的属性值，根据`shallow`看是否直接返回。
 4. 如果获得的属性值是一个`Object`，将会根据`isReadonly`递归调用`reactive`或者是`readonly`并将代理对象返回。
 5. 最后是对不是`readonly`的对象进行依赖收集，然后返回。
+
+
+
+### ReactiveEffect
+
+`ReactiveEffect`有以下属性
+
+```typescript
+private _fn: any;
+deps = [];
+active = true;
+onStop?: () => void;
+scheduler?: () => void;
+```
+
+并且依赖于两个全局变量，`activeEffect`是用于表明当前激活的`effect`， `shouldTrack`来表示是否追踪。
+
+```typescript
+let activeEffect;
+let shouldTrack = false;
+```
+
+
+
+相关流程：
+
+- 首先`ReactiveEffect`的`constructor`会被传入`fn`和可选参数`scheduler`，然后`_fn`会保存`fn`。
+
+- 当调用`run`方法的时候，首先会判断当前是否`active`。
+  - 如果不是`active`的就直接返回函数`fn`执行的结果。
+  - 否则会将当前的`ReactiveEffect`保存到`activeEffect`上，并且将`shouldTrack`设置为`true`。然后调用依赖函数，并且在结束调用的时候将`shouldTrack`重新设置为`false`。最后返回上述调用结果。（注：`effect`函数第一调用`run`的时候会发生）
+
