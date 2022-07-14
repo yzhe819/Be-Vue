@@ -37,7 +37,20 @@
 
 
 
-## 相关代码的实现
+### effect的实现
+
+`effect`函数会接受一个必须的依赖函数`fn`和几个optional的方法，例如`onStop`或者调度执行函数`scheduler`，然后返回`runner`函数。用户可以手动调用`runner`触发`fn`函数。
+
+1. `effect`的实现是通过`effect.ts`内`effect`方法，它会向`ReactiveEffect`类传入`fn`和可选参数`scheduler`创建一个`_effect`对象。
+2. 然后其余optional参数会通过`utils`里面的`extend`方法添加到`_effect`上。（通过`Object.assign`方法）
+3. 初始化好了后，这里会调用一次`run`方法（`_effect.run();`）所以`fn`会在这里被第一次调用。
+4. 然后会生成`runner`函数，`const runner: any = _effect.run.bind(_effect);`，将`_effect`绑定到`runner`上，`bind`对于的是`this`。 （`_effect`）
+5. 然后给`runner`设置`effect`属性，`runner.effect = _effect;`，这里对应的是`stop`函数的实现，因为`stop`里会调用`runner.effect.stop();`。
+6. 最后返回`runner`。
+
+
+
+## 相关函数实现
 
 ### createGetter
 
