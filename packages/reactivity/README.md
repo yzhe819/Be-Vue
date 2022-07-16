@@ -122,6 +122,22 @@ const runner = effect(
 
 -
 
+### isReactive & isReadonly 的基本实现
+
+```typescript
+export function isReactive(value) {
+  return !!value[ReactiveFlags.IS_REACTIVE];
+}
+
+export function isReadonly(value) {
+  return !!value[ReactiveFlags.IS_READONLY];
+}
+```
+
+访问 `value` 上的 `__v_reactive`或者`__v_readonly`属性，这会触发 `get`函数。在 `get`函数中会做出特判，如果是访问这两个值就分别返回 `!isReadonly`和 `isReadonly`。而 `isReadonly`值会在初始化的时候就已经设置。
+
+
+
 ## 相关代码实现
 
 ### createGetter
