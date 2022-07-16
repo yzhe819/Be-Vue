@@ -104,7 +104,23 @@ if (!this.active) {
 
 ### 支持 effect.scheduler
 
+通过`effect`的第二个参数给定一个`scheduler`的函数，当`effect`第一次执行的时候，还会执行`fn`，但是不会执行`scheduler`调度函数。但当响应式对象更新的时候，会执行`scheduler`函数，但不会执行原先设置的`fn`。如果执行`runner`则会执行fn函数。
 
+使用例子：
+
+```typescript
+const runner = effect(
+	fn,
+	{ scheduler }
+);
+```
+
+1. 使用`effect`的`options`传入一个`scheduler`函数
+2. 在`effect`函数初始化的时候，调用了`_effect.run`，f第一次执行。
+3. 当依赖的响应式数据更新的时候，在`triggerEffects()`里面会判断是否存在`scheduler`函数
+4. 如果有就只调用`scheduler`函数，否则会调用对应`ReactiveEffect`的`run`函数 -> `fn`
+
+-
 
 ## 相关代码实现
 
