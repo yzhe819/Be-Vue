@@ -1,4 +1,4 @@
-import { isObject } from "../shared/index";
+import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 
 export function render(vnode, container) {
@@ -10,11 +10,12 @@ function patch(vnode, container) {
   // 判断 vnode 是不是一个 element
   // 是 element 那么就应该处理 element
   // 思考题： 如何去区分是 element 还是 component 类型呢？
-  if (typeof vnode.type === "string") {
+  const { shapeFlag } = vnode;
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     // 是element节点
     console.log("处理 element");
     processElement(vnode, container);
-  } else if (isObject(vnode.type)) {
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     // 是对象，作为组件处理
     console.log("处理 component");
     processComponent(vnode, container);
@@ -28,13 +29,13 @@ function processElement(vnode: any, container: any) {
 function mountElement(vnode: any, container: any) {
   // 创建空的 dom 元素
   const el = (vnode.el = document.createElement(vnode.type));
-  const { children } = vnode;
+  const { children, shapeFlag } = vnode;
 
   // children
-  if (typeof children === "string") {
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     console.log(`处理文本:${children}`);
     el.textContent = children;
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     // 这里 children 就是个数组了，就需要依次调用 patch 递归来处理
     mountChildren(vnode, el);
   }
