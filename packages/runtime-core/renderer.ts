@@ -32,7 +32,7 @@ function mountElement(vnode: any, container: any) {
   const { children, shapeFlag } = vnode;
 
   // children
-  if (shapeFlag & ShapeFlags.ELEMENT) {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     console.log(`处理文本:${children}`);
     el.textContent = children;
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
