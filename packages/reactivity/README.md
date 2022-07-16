@@ -79,11 +79,38 @@
 
 
 
+### 支持 effect.stop & onStop
+
+当外部调用`stop`方法的时候：
+
+1. 首先判断一下这个`ReactiveEffect`的实例内的`active`是否为`false`，如果是直接返回跳过执行。
+2. 否则就开始执行`stop()`的主逻辑，首先清理所有反向收集的依赖，直接清空实例内的`deps` （调用`cleanupEffect`）。
+3. 如果有`onStop()`方法就调用。
+4. 并且最后将`active`设置为`false`。
+
+
+
+**注**：直接调用`runner()`，可以看到还是会存在变化。这种实现是通过一个判断实现。
+
+```typescript
+if (!this.active) {
+	return this._fn();
+}
+```
+
+这样调用`_fn()`运行的时候就没有将`shouldTrack = true; activeEffect = this;`设置好，进到`_fn`运行的时候，当其调用`get`函数的时候，依赖收集就不会将其重复收集进去 （`isTracking()`)。
+
+
+
+### 支持 effect.scheduler
+
+
+
 ## 相关代码实现
 
 ### createGetter
 
-`createGetter`可以传入两个参数，分别为`isReadonly`和`shallow`，并默认为`false`。`isReadonly`和shallow是用于标记创建的是否是`readonly`或者是`shallow`。 其中Get实现逻辑如下：
+`createGetter`可以传入两个参数，分别为`isReadonly`和`shallow`，并默认为`false`。`isReadonly`和`shallow`是用于标记创建的是否是`readonly`或者是`shallow`。 其中Get实现逻辑如下：
 
 1. 判断是否为访问r`eactiveFlags`参数（`__v_isReactive`和`__v_isReadonly`，在`reactive.ts`里面定义这个enum）， 然后根据`isReadonly`的值返回。
 2. 再使用`reflect.get`调用对象内`get`方法获取属性值。
