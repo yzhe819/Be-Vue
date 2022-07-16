@@ -13,6 +13,14 @@ export const App = {
       {
         id: "root", // set the id attribute
         class: ["red", "hard"], // set the class attribute
+        onClick() {
+          // set the onClick event
+          console.log("click");
+        },
+        onMousedown() {
+          // set the onMousedown event
+          console.log("mousedown");
+        },
       },
       // children
       // Array -> children -> two p tags
