@@ -1,3 +1,4 @@
+import { isObject } from "../shared";
 import {
   mutableHandlers,
   readonlyHandlers,
@@ -35,6 +36,10 @@ export function isProxy(value) {
 }
 
 function createReactiveObject(target, baseHandler) {
+  if (!isObject(target)) {
+    console.warn(`target ${target} 必须是一个对象`);
+    return target;
+  }
   // Proxy对象由target明白对象、baseHandler代理行为的对象组成
   return new Proxy(target, baseHandler);
 }
