@@ -19,6 +19,7 @@ export function setupComponent(instance) {
 function setupStatefulComponent(instance: any) {
   const Component = instance.type;
 
+  console.log("创建 proxy");
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
   const { setup } = Component;
   if (setup) {
@@ -28,6 +29,7 @@ function setupStatefulComponent(instance: any) {
 }
 
 function handleSetupResult(instance, setupResult: any) {
+  console.log("处理 setup 结果");
   // function Object
   if (typeof setupResult === "object") {
     instance.setupState = setupResult;
@@ -36,6 +38,7 @@ function handleSetupResult(instance, setupResult: any) {
 }
 
 function finishComponentSetup(instance: any) {
+  console.log("完成组件初始化");
   const Component = instance.type;
   instance.render = Component.render;
 }
