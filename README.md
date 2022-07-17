@@ -3,6 +3,8 @@
 
 实现 Vue3 核心逻辑的最简模型
 
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/yzhe819/Be-Vue/blob/main/LICENSE) [![ci](https://github.com/yzhe819/Be-Vue/actions/workflows/ci.yml/badge.svg)](https://github.com/yzhe819/Be-Vue/actions/workflows/ci.yml) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/yzhe819/Be-Vue/pulls)
+
 
 
 ## Related Tasks
