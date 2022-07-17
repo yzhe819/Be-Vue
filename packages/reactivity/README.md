@@ -120,7 +120,15 @@ const runner = effect(
 3. 当依赖的响应式数据更新的时候，在`triggerEffects()`里面会判断是否存在`scheduler`函数
 4. 如果有就只调用`scheduler`函数，否则会调用对应`ReactiveEffect`的`run`函数 -> `fn`
 
--
+
+
+### readonly 的实现
+
+`readonly`的实现和`reactive`的非常类似，也是使用`createReactiveObject`方法将`baseHandler`传入生成`readonly`对象。但在`readonly`里传入的`baseHandler`不是`mutableHandlers`，而是`readonlyHandlers`。
+
+`readonlyHandlers`调用`createGetter`作为`get`函数，并且将`isReadonly`设置为`true`。这样就无需进行依赖收集了。而set函数会设置成`console.warn`，当用户修改的时候就发出不能被修改的警告。
+
+
 
 ### isReactive & isReadonly 的基本实现
 
@@ -135,6 +143,56 @@ export function isReadonly(value) {
 ```
 
 访问 `value` 上的 `__v_reactive`或者`__v_readonly`属性，这会触发 `get`函数。在 `get`函数中会做出特判，如果是访问这两个值就分别返回 `!isReadonly`和 `isReadonly`。而 `isReadonly`值会在初始化的时候就已经设置。
+
+
+
+### 支持 shallowReadonly
+
+类似于`readonly`，并且在调用`createGetter`的时候将`shallow`设置为`true`。这样在`get`函数内使`Reflect.get`获取到值就直接返回。
+
+
+
+### ref 的实现
+
+`reactive`是针对于数据对象而言，而`ref`则是处理基础的数据类型。`ref`实际上是返回了一个包裹数据的`RefImpl`对象，从而实现响应式代理。这部分会在下面的`RefImpl`中涉及到。
+
+
+
+### 支持 proxyRefs
+
+在`vue`的模板中使用`proxyRefs`可以直接访问到`ref`的值，而不需要添加额外的`value`进行访问。
+
+```typescript
+export function proxyRefs(objectWithRefs) {
+  return new Proxy(objectWithRefs, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key));
+    },
+    set(target, key, value) {
+      if (isRef(target[key]) && !isRef(value)) {
+        // 如果原有的值是ref并且传入的value不是ref，那么就把新值设置到ref上
+        return (target[key].value = value);
+      } else {
+        // 否则直接设置新值
+        return Reflect.set(target, key, value);
+      }
+    },
+  });
+}
+```
+
+- 原理是用了`unRef`方法，判断一下是否是`ref`类型的数据，如果是就返回`ref.value`，否则就直接返回原数据。
+- 而在`set`函数内，当新传入的值不是`ref`数据，但原值是`ref`数据，**则直接 `targetVal.value = value`，否则直接 `targetVal = value`**。
+
+
+
+### 支持 isProxy
+
+```typescript
+export function isProxy(value) {
+  return isReactive(value) || isReadonly(value);
+}
+```
 
 
 
@@ -171,13 +229,29 @@ let activeEffect;
 let shouldTrack = false;
 ```
 
-
-
 相关流程：
 
 - 首先`ReactiveEffect`的`constructor`会被传入`fn`和可选参数`scheduler`，然后`_fn`会保存`fn`。
-
 - 当调用`run`方法的时候，首先会判断当前是否`active`。
   - 如果不是`active`的就直接返回函数`fn`执行的结果。
   - 否则会将当前的`ReactiveEffect`保存到`activeEffect`上，并且将`shouldTrack`设置为`true`。然后调用依赖函数，并且在结束调用的时候将`shouldTrack`重新设置为`false`。最后返回上述调用结果。（注：`effect`函数第一调用`run`的时候会发生）
+
+
+
+### RefImpl
+
+`RefImpl`有以下属性：
+
+```typescript
+private _value: any; // 当前响应式数据
+public dep; // 相关依赖
+private _rawValue: any; // 原始数据
+public __v_isRef = true; // 是否是 ref 对象标识 
+```
+
+相关流程：
+
+- 调用构造函数时会传入`value`变，首先会运行`convert`函数，判断传入是否为对象，是则转换为`reactive`对象，否则使用原始数据，然后把记录在 `_value` 上，而`_rawValue` 存储一开始的 `value`。并且初始化依赖集合。
+- `refImpl` 是使用 `get` 方法实现数据劫持，直接调用`effect.ts`的`trackRefValue`函数进行依赖收集。然后将保存的`_value`值直接返回出去。
+- 而`refImpl`使用 `set` 方法实现数据设置派发更新，判断根据 `_rawValue` 数据是否变化，来减少无用更新优化速度。然后对新传入的值进行convert，再将其存在 `_value` 上，`_rawValue` 存储一开始传入的 `newValue`。最后会触发`triggerEffects` 更新。
 
